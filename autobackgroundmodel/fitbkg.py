@@ -122,17 +122,18 @@ class PCAFitter(object):
 	def __init__(self, bkg_filename):
 		f = pyfits.open(bkg_filename)
 		self.bkg_filename = bkg_filename
-		self.data = f[1].data['COUNTS'].astype(int)
+		self.data = f['SPECTRUM'].data['COUNTS'].astype(int)
 		self.ndata = len(self.data)
 		self.ngaussians = 0
 		logf.info('PCAFitter starting')
-		hdr = f[1].header
+		hdr = f['SPECTRUM'].header
 		telescope = hdr.get('TELESCOP','')
 		instrument = hdr.get('INSTRUME', '')
 		if telescope == '' and instrument == '':
 			raise Exception('ERROR: The TELESCOP/INSTRUME headers are not set in the data file.')
 		for folder in os.environ.get('BKGMODELDIR', '.'), os.path.dirname(__file__):
-			filename = os.path.join(folder, ('%s_%s_%d.json' % (telescope, instrument, self.ndata)).lower())
+			#filename = os.path.join(folder, ('%s_%s_%d.json' % (telescope, instrument, self.ndata)).lower()) 
+			filename = os.path.join(folder, ('%s_%s_%d_%d.json' % (telescope, instrument, self.ndata,self.ndata)).lower())
 			if os.path.exists(filename):
 				self.load(filename)
 				return
@@ -226,7 +227,7 @@ class PCAFitter(object):
 	def calc_bkg_stat_wrapped_gaussians(self, pars):
 		return self.calc_bkg_stat(self.predict(pars)) + self.calc_prior(pars)
 		
-	def fit(self):
+	def fit(self,DeltaAIC=0):
 		# try a PCA decomposition of this spectrum
 		logf.info('fitting background using PCA method')
 		initial = self.decompose()
@@ -352,14 +353,14 @@ class PCAFitter(object):
 			next_nparams = last_nparams + 3
 			next_aic = v + 2 * next_nparams
 			print('with Gaussian:', next_aic, '; change: %.1f (negative is good)' % (next_aic - last_aic))
-			if next_aic < last_aic:
-				print('accepting')
+			if next_aic +DeltaAIC < last_aic: #
+				print('accepting',last_final,next_final)
 				last_aic, last_final, last_nparams, _ = next_aic, next_final, next_nparams, v
 				last_pred = next_pred
 			else:
 				print('not significant, rejecting')
 				# reset to previous model
-				return last_pred, predictions
+				return last_pred, predictions, last_final[:(self.ngaussians-1)*3].reshape((self.ngaussians-1,3)), self.complete_parameters(last_final[(self.ngaussians-1)*3:])
 	
 if __name__ == '__main__':
 	import sys
@@ -377,7 +378,7 @@ if __name__ == '__main__':
 		print('SYNOPSIS: %s <bkg.pi> [<src.pi>] ' % sys.argv[0])
 		sys.exit(1)
 	fitter = PCAFitter(sys.argv[1])
-	result, predictions = fitter.fit()
+	result, predictions,_a,_b = fitter.fit()
 	data = fitter.cts
 
 	# write out bkg file
