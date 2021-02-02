@@ -134,10 +134,12 @@ class PCAFitter(object):
 		for folder in os.environ.get('BKGMODELDIR', '.'), os.path.dirname(__file__):
 			#filename = os.path.join(folder, ('%s_%s_%d.json' % (telescope, instrument, self.ndata)).lower()) 
 			filename = os.path.join(folder, ('%s_%s_%d_%d.json' % (telescope, instrument, self.ndata,self.ndata)).lower())
+			print(filename)
 			if os.path.exists(filename):
 				self.load(filename)
 				return
 			filename = os.path.join(folder, ('%s_%d.json' % (telescope, self.ndata)).lower())
+			print(filename)
 			if os.path.exists(filename):
 				self.load(filename)
 				return
