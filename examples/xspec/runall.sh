@@ -1,23 +1,17 @@
 #!/bin/bash
 
 # start from scratch
-rm -f simplest-resume.dat absorbed-resume.dat line-resume.dat
+rm -rf simplest/ absorbed/ line/
 
 # slow generating, to let us see what we did
 cat gen.xspec | { 
 	while read line; do echo "$line"; sleep 0.1; done; sleep 10;
 } | xspec
 
-# run the three models in parallel (&)
-python example_simplest.py &
-python example_advanced_priors.py example-file.fak absorbed- &
-python example_custom_run.py example-file.fak line- &
-
-# wait until they are done
-wait
+# run the three models
+coverage run -p example_simplest.py || exit 1
+coverage run -p example_advanced_priors.py example-file.fak absorbed/  || exit 1
+coverage run -p example_custom_run.py example-file.fak line/  || exit 1
 
 # compare the evidences
-python model_compare.py absorbed- simplest- line-
-
-
-
+coverage run -p model_compare.py absorbed simplest line || exit 1
