@@ -27,6 +27,9 @@ Then define the priors over the free parameters, for example::
       bxa.create_gaussian_prior_for(param3, 1.95, 0.15),
       # and more priors
    ]
+   
+   # make a single function:
+   priorfunction = bxa.create_prior_function(priors)
 
 Make sure you set the parameter minimum and maximum values to appropriate (a priori reasonable) values.
 The limits are used to define the uniform and loguniform priors.
@@ -36,10 +39,40 @@ As a hint, you can find all thawed parameters of a model with::
 
    parameters = [for p in get_model().pars if not p.frozen and p.link is None]
 
+You can also define your own prior functions, which transform 
+unit variables unto the values needed for each parameter.
+See the `UltraNest documentation on priors <https://johannesbuchner.github.io/UltraNest/priors.html>`_ 
+for more details about this concept.
+The script `examples/sherpa/example_automatic_background_model.py <https://github.com/JohannesBuchner/BXA/blob/master/examples/sherpa/example_automatic_background_model.py>`_ 
+gives an example of such a custom prior function (`limited_19_24`).
+
+API information:
+
 .. autofunction:: bxa.sherpa.create_jeffreys_prior_for
 .. autofunction:: bxa.sherpa.create_uniform_prior_for
 .. autofunction:: bxa.sherpa.create_gaussian_prior_for
 .. autofunction:: bxa.sherpa.create_prior_function
+
+.. _sherpa-prior-predictive-checks:
+
+Prior Predictive Checks
+------------------------
+
+To check that your priors and model is okay and working,
+create a flipbook of prior samples.
+
+1) Pick a random sample from the prior::
+
+   for parameter, prior_function in zip(parameters, priors):
+       parameter.val = prior_function(numpy.random.uniform())
+
+2) make a plot (plot_model, plot_source, etc.)
+
+Repeat this 20 times and look at the plots.
+
+Do the shapes and number of counts expected
+look like a reasonable representation of your prior expectation?
+
 
 .. _sherpa-run:
 
@@ -51,12 +84,14 @@ You need to specify a prefix, called *outputfiles_basename* where the files are 
 ::
 
    # see the pymultinest documentation for all options
-   priorfunction = bxa.create_prior_function(parameters)
    solver = bxa.BXASolver(prior=priorfunction, parameters=parameters,
 		outputfiles_basename = "myoutputs/")
    results = solver.run(resume=True)
 
+API information:
+
 .. autoclass:: bxa.sherpa.BXASolver
+   :members: run
 
 .. _sherpa-analyse:
 
@@ -96,6 +131,8 @@ the correct luminosity distribution.
 
      dist = solver.get_distribution_with_fluxes(lo=2, hi=10)
      numpy.savetxt(out + prefix + "dist.txt", dist)
+
+API information:
 
 .. automethod:: bxa.sherpa.BXASolver.get_distribution_with_fluxes
 

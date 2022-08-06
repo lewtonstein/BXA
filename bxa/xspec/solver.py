@@ -37,7 +37,8 @@ class XSilence(object):
 
 def create_prior_function(transformations):
 	"""
-	Creates a single prior transformation function from parameter transformations
+	Create a single prior transformation function from a list of
+	transformations for each parameter. This assumes the priors factorize.
 	"""
 
 	def prior(cube):
@@ -96,14 +97,19 @@ def set_parameters(transformations, values):
 
 class BXASolver(object):
 	"""
-	Run the Bayesian analysis with specified parameters+transformations.
+	Run the Bayesian analysis.
+
+	The nested sampling package `UltraNest <https://johannesbuchner.github.io/UltraNest/>`_ is used under the hood.
 
 	If prior is None, uniform priors are used on the passed parameters.
 	If parameters is also None, all thawed parameters are used.
 
-	:param transformations: Parameter transformation definitions
+	:param transformations: List of parameter transformation definitions
 	:param prior_function: set only if you want to specify a custom, non-separable prior
 	:param outputfiles_basename: prefix for output filenames.
+
+	More information on the concept of prior transformations is available at
+	https://johannesbuchner.github.io/UltraNest/priors.html
 	"""
 
 	allowed_stats = ['cstat', 'cash', 'pstat']
@@ -141,6 +147,15 @@ class BXASolver(object):
 		params = self.results['weighted_samples']['points'][i, :]
 		set_parameters(transformations=self.transformations, values=params)
 
+
+	def log_likelihood(self, params):
+		set_parameters(transformations=self.transformations, values=params)
+		like = -0.5 * Fit.statistic
+		# print("like = %.1f" % like)
+		if not numpy.isfinite(like):
+			return -1e100
+		return like
+
 	def run(
 		self, evidence_tolerance=0.5, n_live_points=400,
 		wrapped_params=None, **kwargs
@@ -161,15 +176,7 @@ class BXASolver(object):
 		These are ultranest parameters (see ultranest.solve documentation!)
 		"""
 
-		def log_likelihood(params):
-			set_parameters(transformations=self.transformations, values=params)
-			like = -0.5 * Fit.statistic
-			# print("like = %.1f" % like)
-			if not numpy.isfinite(like):
-				return -1e100
-			return like
-
-		# run multinest
+		# run nested sampling
 		if Fit.statMethod.lower() not in BXASolver.allowed_stats:
 			raise RuntimeError('ERROR: not using cash (Poisson likelihood) for Poisson data! set Fit.statMethod to cash before analysing (currently: %s)!' % Fit.statMethod)
 
@@ -179,7 +186,7 @@ class BXASolver(object):
 
 		with XSilence():
 			self.results = solve(
-				log_likelihood, self.prior_function, n_dims,
+				self.log_likelihood, self.prior_function, n_dims,
 				paramnames=self.paramnames,
 				outputfiles_basename=self.outputfiles_basename,
 				resume=resume, Lepsilon=Lepsilon,
@@ -295,7 +302,8 @@ class BXASolver(object):
 		return results
 
 	def posterior_predictions_unconvolved(
-		self, component_names=None, plot_args=None, nsamples=400
+		self, component_names=None, plot_args=None, nsamples=400,
+		plottype='model',
 	):
 		"""
 		Plot unconvolved model posterior predictions.
@@ -332,7 +340,7 @@ class BXASolver(object):
 					bands[component].add(y)
 
 		self.posterior_predictions_plot(
-			plottype='model',
+			plottype=plottype,
 			callback=plot_unconvolved_components,
 			nsamples=nsamples)
 		for band, label in zip(bands, component_names):
@@ -408,7 +416,7 @@ def standard_analysis(
 	Copy them to your scripts and adapt them to your needs.
 	"""
 
-	#   run multinest
+	#   run nested sampling
 	print('running analysis ...')
 	solver = BXASolver(
 		transformations=transformations,

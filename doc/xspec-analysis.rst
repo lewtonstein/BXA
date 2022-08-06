@@ -18,21 +18,58 @@ with `PyXSpec`_.
 Defining priors
 ---------------------
 
-Create a list of prior transformations like in the example above, one line for each variable.
-These functions will help you with that.
+Define your background model and source model as usual in xspec.
+Then define the priors over the free parameters, for example:
+
+.. literalinclude:: ../examples/xspec/example_simplest.py
+   :lines: 13-27
+
+The above is taken from 
+`examples/xspec/example_simplest.py <https://github.com/JohannesBuchner/BXA/blob/master/examples/xspec/example_simplest.py>`_.
+
+Make sure you set the parameter minimum and maximum values to appropriate (a priori reasonable) values.
+The limits are used to define the uniform and loguniform priors.
+
+You can freeze the parameters you do not want to investigate, but BXA only modifies the parameters specified.
+
+You can also define your own prior functions, which transform 
+unit variables unto the values needed for each parameter.
+See the `UltraNest documentation on priors <https://johannesbuchner.github.io/UltraNest/priors.html>`_ 
+for more details about this concept.
+The script `examples/xspec/example_advanced_priors.py <https://github.com/JohannesBuchner/BXA/blob/master/examples/xspec/example_advanced_priors.py>`_ 
+gives an example of such a custom prior function (`my_custom_prior`).
+
+API information:
 
 .. autofunction:: bxa.xspec.create_uniform_prior_for
 .. autofunction:: bxa.xspec.create_loguniform_prior_for
 .. autofunction:: bxa.xspec.create_gaussian_prior_for
 .. autofunction:: bxa.xspec.create_custom_prior_for
 
-For example:
 
-.. literalinclude:: ../examples/xspec/example_simplest.py
-   :lines: 13-27
+Prior Predictive Checks
+------------------------
 
-See `examples/xspec/example_simplest.py <https://github.com/JohannesBuchner/BXA/blob/master/examples/xspec/example_simplest.py>`_ for a simple example. 
-`examples/xspec/example_advanced_priors.py <https://github.com/JohannesBuchner/BXA/blob/master/examples/xspec/example_advanced_priors.py>`_ introduces more complex and custom priors.
+To check that your priors and model is okay and working,
+create a flipbook of prior sample predictions.
+
+1) Pick a random sample from the prior::
+
+   import numpy
+   from bxa.xspec.solver import set_parameters
+
+   prior_function = bxa.create_prior_function(transformations)
+   values = prior_function(numpy.random.uniform(size=len(transformations)))
+   set_parameters(transformations, values)
+   print("set to parameters:", values)
+
+2) make a plot
+
+Repeat this 20 times and look at the plots.
+
+Do the shapes and number of counts expected
+look like a reasonable representation of your prior expectation?
+
 
 .. _xspec-run:
 
@@ -70,6 +107,8 @@ see https://corner.readthedocs.io/en/latest/.
 
 Model checking
 -----------------------
+
+For this functionality, you also need scipy installed.
 
 The following code creates a plot of the convolved posterior model:
 

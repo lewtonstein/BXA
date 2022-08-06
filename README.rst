@@ -11,6 +11,7 @@ BXA provides the following features:
    * finding the best fit
    * computing error bars
    * computing marginal probability distributions
+   * parallelisation with MPI
 * plotting of spectral model vs. the data:
    * for the best fit
    * for each of the solutions (posterior samples)
@@ -28,10 +29,14 @@ BXA provides the following features:
 BXA shines especially
 
 * when systematically analysing a large data-set, or
-* when comparing multiple models, or
-* when analysing low counts data-set
-* when you don't want to babysit your fits
-* when you don't want to test MCMC chains for their convergence
+* when comparing multiple models
+* when analysing low counts data-set with realistic models
+
+because its robust and unsupervised fitting algorithm explores
+even complicated parameter spaces in an automated fashion.
+The user does not need to initialise to good starting points.
+The `algorithm <https://johannesbuchner.github.io/UltraNest/method.html>`_ automatically runs until convergence, and slows down to sample
+carefully if complicated parameter spaces are encountered. This allows building automated analysis pipelines.
 
 .. image:: https://img.shields.io/pypi/v/BXA.svg
         :target: https://pypi.python.org/pypi/BXA
@@ -71,7 +76,7 @@ BXA's `documentation <http://johannesbuchner.github.io/BXA/>`_ is hosted at http
 Installation
 -------------
 
-First, you need to have `Sherpa`_ or `Xspec`_ installed and its environment loaded.
+First, you need to have either `Sherpa`_ or `Xspec`_ installed and its environment loaded.
 
 BXA itself can installed easily using pip or conda::
 
@@ -87,10 +92,14 @@ The following commands should not yield any error message::
 	$ python -c 'import xspec'
 	$ sherpa
 
-You may need to install required python packages through your package manager. For example::
+You may need to install python and some basic packages through your package manager. For example::
 
 	$ yum install ipython python-matplotlib scipy numpy matplotlib
 	$ apt-get install python-numpy python-scipy python-matplotlib ipython
+
+BXA requires the following python packages: requests corner astropy h5py cython scipy tqdm.
+They should be downloaded automatically. If they are not, install them
+also with pip/conda.
 
 The source code is available from https://github.com/JohannesBuchner/BXA,
 so alternatively you can download and install it::
@@ -102,6 +111,14 @@ so alternatively you can download and install it::
 Or if you only want to install it for the current user::
 
 	$ python setup.py install --user
+
+**Supported operating systems**: 
+BXA runs on all operating systems supported by 
+`ciao/sherpa <https://cxc.cfa.harvard.edu/ciao/watchout.html#install>`_ or 
+`heasoft/xspec <https://heasarc.gsfc.nasa.gov/lheasoft/issues.html>`_.
+The support is systematically tested for every BXA release by 
+`Travis CI <https://travis-ci.com/github/JohannesBuchner/BXA>`_, but only for Ubuntu Linux.
+
 
 Running
 --------------
@@ -126,7 +143,8 @@ For *Xspec*, start python or ipython::
 	
 	In [3]:	bxa.BXASolver?
 
-Now you can use BXA.
+Now you can use BXA. See the documentation pages for how
+to perform analyses. Several examples are included.
 
 .. _ultranest: http://johannesbuchner.github.io/UltraNest/
 
