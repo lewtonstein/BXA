@@ -281,17 +281,18 @@ class PCAFitter(object):
 		if telescope == '' and instrument == '':
 			raise Exception('ERROR: The TELESCOP/INSTRUME headers are not set in the data file.')
 		for folder in os.environ.get('BKGMODELDIR', '.'), os.path.dirname(__file__):
-			#filename = os.path.join(folder, ('%s_%s_%d.json' % (telescope, instrument, self.ndata)).lower()) 
-			filename = os.path.join(folder, ('%s_%s_%d_%d.json' % (telescope, instrument, self.ndata,self.ndata)).lower())
+			filename = os.path.join(folder, ('%s_%s_%d.json' % (telescope, instrument, self.ndata)).lower()) 
 			print(filename)
 			if os.path.exists(filename):
 				self.load(filename)
 				return
+			else: print('not exit')
 			filename = os.path.join(folder, ('%s_%d.json' % (telescope, self.ndata)).lower())
 			print(filename)
 			if os.path.exists(filename):
 				self.load(filename)
 				return
+			else: print('not exit')
 		raise Exception('ERROR: Could not load PCA components for this detector (%s %s, %d channels). Try the SingleFitter instead.' % (telescope, instrument, self.ndata))
 	
 	def load(self, filename):

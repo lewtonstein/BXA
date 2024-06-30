@@ -92,6 +92,7 @@ def set_parameters(transformations, values):
 			i, t['index'], t['name'], v)
 		pars += [t['model'], {t['index']:v}]
 	AllModels.setPars(*pars)
+	Fit.update() #lewton
 
 
 class BXASolver(object):
